@@ -2,6 +2,5 @@
     "name" : "gamepak",
     "classPath": "libsrc",
     "dependencies": {
-        "msgpack-haxe": ""
     }
 }
