@@ -14,7 +14,7 @@ import org.msgpack.MsgPack;
 #end
 class Gamepak {
 
-    public var snbprojPath: String;
+    public var sbxprojPath: String;
     public var projDirPath: String = "";
 
     public var jsprojJson: ProjectFile;
@@ -35,16 +35,16 @@ class Gamepak {
 
     public var chmodder: (String)->Void;
 
-    public function build(snbprojPath: String): Void {
-        Sys.println("Building project at: " + snbprojPath);
+    public function build(sbxprojPath: String): Void {
+        Sys.println("Building project at: " + sbxprojPath);
 
-        snbprojPath = FileSystem.absolutePath(snbprojPath);
+        sbxprojPath = FileSystem.absolutePath(sbxprojPath);
 
         // Here you would implement the logic to build the project
         // For now, we just print a message
-        this.snbprojPath = snbprojPath;
-        var snbProjPathArray = snbprojPath.split("/");
-        this.projDirPath = snbProjPathArray.slice(0, snbProjPathArray.length - 1).join("/");
+        this.sbxprojPath = sbxprojPath;
+        var sbxProjPathArray = sbxprojPath.split("/");
+        this.projDirPath = sbxProjPathArray.slice(0, sbxProjPathArray.length - 1).join("/");
         Sys.println("Project directory path: " + this.projDirPath);
         var binPath = this.projDirPath + "/bin";
         if (!FileSystem.exists(binPath)) {
@@ -56,7 +56,7 @@ class Gamepak {
 
         // Load the XML project file
         try {
-            var json = sys.io.File.getContent(snbprojPath);
+            var json = sys.io.File.getContent(sbxprojPath);
             this.jsprojJson = haxe.Json.parse(json);
             Sys.println("Successfully loaded project JSON.");
 
@@ -74,26 +74,26 @@ class Gamepak {
 
             if (jsprojJson.type == "executable") {
                 if (zipOutputPath == "") {
-                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".snb";
+                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".sbx";
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".slib")) {
-                    Sys.println("Warning: Output path ends with .slib, changing to .snb");
-                    zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".snb");
+                    Sys.println("Warning: Output path ends with .slib, changing to .sbx");
+                    zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".sbx");
                 }
-                else if (StringTools.endsWith(zipOutputPath, ".snb")) {
+                else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
                     // Do nothing, already correct
                 }
                 else {
-                    zipOutputPath += ".snb";
+                    zipOutputPath += ".sbx";
                 }
             }
             else if (jsprojJson.type == "library") {
                 if (zipOutputPath == "") {
                     zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
                 }
-                else if (StringTools.endsWith(zipOutputPath, ".snb")) {
-                    Sys.println("Warning: Output path ends with .snb, changing to .slib");
-                    zipOutputPath = StringTools.replace(zipOutputPath, ".snb", ".slib");
+                else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
+                    Sys.println("Warning: Output path ends with .sbx, changing to .slib");
+                    zipOutputPath = StringTools.replace(zipOutputPath, ".sbx", ".slib");
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".slib")) {
                     // Do nothing, already correct
@@ -140,7 +140,7 @@ class Gamepak {
             // Collect all zip entries in a list
             var entries = new haxe.ds.List<haxe.zip.Entry>();
 
-            //Sys.println("Adding main js file to zip: " + this.snbProjJson.mainscript);
+            //Sys.println("Adding main js file to zip: " + this.sbxProjJson.mainscript);
             // Add main js file to the zip
             var entry:haxe.zip.Entry = {
                 fileName: this.jsprojJson.mainscript,
@@ -284,7 +284,7 @@ class Gamepak {
                 out.close();
 
                 if (jsprojJson.type == "executable") {
-                    Sys.println("snb file created successfully at: " + zipOutputPath);
+                    Sys.println("sbx file created successfully at: " + zipOutputPath);
                 }
                 else if (jsprojJson.type == "library") {
                     Sys.println("slib file created successfully at: " + zipOutputPath);
@@ -303,20 +303,20 @@ class Gamepak {
 #if js
     public var jsonToMsgpackConverter: (String) -> Bytes;
 
-    public function buildCoroutine(snbprojPath: String): js.Coroutine<()->Void> {
+    public function buildCoroutine(sbxprojPath: String): js.Coroutine<()->Void> {
     return Coroutine.create(() -> {
 
         // ---------------------------------
         // Phase 1: Initial setup and paths
         // ---------------------------------
-        Sys.println("Building project at: " + snbprojPath);
+        Sys.println("Building project at: " + sbxprojPath);
 
-        if (StringTools.contains(snbprojPath, "\\")) {
-            snbprojPath = StringTools.replace(snbprojPath, "\\", "/");
+        if (StringTools.contains(sbxprojPath, "\\")) {
+            sbxprojPath = StringTools.replace(sbxprojPath, "\\", "/");
         }
-        this.snbprojPath = snbprojPath;
-        var snbProjPathArray = snbprojPath.split("/");
-        this.projDirPath = snbProjPathArray.slice(0, snbProjPathArray.length - 1).join("/");
+        this.sbxprojPath = sbxprojPath;
+        var sbxProjPathArray = sbxprojPath.split("/");
+        this.projDirPath = sbxProjPathArray.slice(0, sbxProjPathArray.length - 1).join("/");
         Sys.println("Project directory path: " + this.projDirPath);
 
         var binPath = this.projDirPath + "/bin";
@@ -334,7 +334,7 @@ class Gamepak {
         // Phase 2: Load project JSON
         // ---------------------------
         try {
-            var json = sys.io.File.getContent(snbprojPath);
+            var json = sys.io.File.getContent(sbxprojPath);
             this.jsprojJson = haxe.Json.parse(json);
             Sys.println("Successfully loaded project JSON.");
             Sys.println("Project name: " + this.jsprojJson.name);
@@ -352,19 +352,19 @@ class Gamepak {
         // -------------------------------
         if (jsprojJson.type == "executable") {
             if (zipOutputPath == "") {
-                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".snb";
+                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".sbx";
             } else if (StringTools.endsWith(zipOutputPath, ".slib")) {
-                Sys.println("Warning: Output path ends with .slib, changing to .snb");
-                zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".snb");
-            } else if (!StringTools.endsWith(zipOutputPath, ".snb")) {
-                zipOutputPath += ".snb";
+                Sys.println("Warning: Output path ends with .slib, changing to .sbx");
+                zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".sbx");
+            } else if (!StringTools.endsWith(zipOutputPath, ".sbx")) {
+                zipOutputPath += ".sbx";
             }
         } else if (jsprojJson.type == "library") {
             if (zipOutputPath == "") {
                 zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
-            } else if (StringTools.endsWith(zipOutputPath, ".snb")) {
-                Sys.println("Warning: Output path ends with .snb, changing to .slib");
-                zipOutputPath = StringTools.replace(zipOutputPath, ".snb", ".slib");
+            } else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
+                Sys.println("Warning: Output path ends with .sbx, changing to .slib");
+                zipOutputPath = StringTools.replace(zipOutputPath, ".sbx", ".slib");
             } else if (!StringTools.endsWith(zipOutputPath, ".slib")) {
                 zipOutputPath += ".slib";
             }
@@ -629,20 +629,20 @@ class Gamepak {
         var command = "" + haxePath + " \"" + hxmlPath + "\"";
 
         return command;
-        /*var command = this.haxePath + " --class-path " + this.projDirPath + "/" + this.snbProjJson.scriptdir + " -main " + this.snbProjJson.entrypoint + " --library sunaba";
-        if (this.snbProjJson.apisymbols != false) {
+        /*var command = this.haxePath + " --class-path " + this.projDirPath + "/" + this.sbxProjJson.scriptdir + " -main " + this.sbxProjJson.entrypoint + " --library sunaba";
+        if (this.sbxProjJson.apisymbols != false) {
             command += " --xml " + this.projDirPath + "/types.xml";
         }
-        if (this.snbProjJson.sourcemap != false) {
+        if (this.sbxProjJson.sourcemap != false) {
             command += " -D source-map";
         }
-        command += " -js " + this.projDirPath + "/" + this.snbProjJson.mainscript += " -D js-ver 5.4";
+        command += " -js " + this.projDirPath + "/" + this.sbxProjJson.mainscript += " -D js-ver 5.4";
 
         var librariesStr = "";
-        for (lib in this.snbProjJson.libraries) {
+        for (lib in this.sbxProjJson.libraries) {
             librariesStr += " --library " + lib;
         }
-        command += " " + this.snbProjJson.compilerFlags.join(" ");
+        command += " " + this.sbxProjJson.compilerFlags.join(" ");
         return command;*/
     }
 
