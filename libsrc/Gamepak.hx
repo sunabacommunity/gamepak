@@ -1,14 +1,14 @@
 package;
 import haxe.Json;
 import haxe.io.BytesBuffer;
-#if lua
-import lua.Coroutine;
+#if js
+import js.Coroutine;
 #end
 import haxe.io.Bytes;
 import haxe.ds.StringMap;
 import sys.io.File;
 import sys.FileSystem;
-#if lua
+#if js
 #else
 import org.msgpack.MsgPack;
 #end
@@ -68,7 +68,7 @@ class Gamepak {
             Sys.println("API symbols enabled: " + this.sprojJson.apisymbols);
             Sys.println("Source map enabled: " + this.sprojJson.sourcemap);
             Sys.println("Entrypoint: " + this.sprojJson.entrypoint);
-            Sys.println("Lua binary: " + this.sprojJson.luabin);
+            Sys.println("js binary: " + this.sprojJson.mainscript);
             Sys.println("Libraries: " + this.sprojJson.libraries.join(", "));
             Sys.println("Compiler flags: " + this.sprojJson.compilerFlags.join(", "));
 
@@ -122,15 +122,15 @@ class Gamepak {
 
             Sys.println("Haxe build command executed successfully.");
 
-            var mainLuaPath = this.projDirPath + "/" + this.sprojJson.luabin;
-            if (!FileSystem.exists(mainLuaPath)) {
-                Sys.println("Main Lua file does not exist: " + mainLuaPath);
+            var mainjsPath = this.projDirPath + "/" + this.sprojJson.mainscript;
+            if (!FileSystem.exists(mainjsPath)) {
+                Sys.println("Main js file does not exist: " + mainjsPath);
                 Sys.exit(1);
                 return;
             }
 
-            //Sys.println("Reading main Lua file: " + mainLuaPath);
-            var mainLuaContent = File.getBytes(mainLuaPath);
+            //Sys.println("Reading main js file: " + mainjsPath);
+            var mainjsContent = File.getBytes(mainjsPath);
 
             // Create the zip file using haxe.zip.Writer
             //Sys.println("Creating zip file at: " + zipOutputPath);
@@ -140,22 +140,22 @@ class Gamepak {
             // Collect all zip entries in a list
             var entries = new haxe.ds.List<haxe.zip.Entry>();
 
-            //Sys.println("Adding main Lua file to zip: " + this.snbProjJson.luabin);
-            // Add main Lua file to the zip
+            //Sys.println("Adding main js file to zip: " + this.snbProjJson.mainscript);
+            // Add main js file to the zip
             var entry:haxe.zip.Entry = {
-                fileName: this.sprojJson.luabin,
+                fileName: this.sprojJson.mainscript,
                 fileTime: Date.now(),
-                dataSize: mainLuaContent.length,
-                fileSize: mainLuaContent.length,
-                data: mainLuaContent,
-                crc32: haxe.crypto.Crc32.make(mainLuaContent),
+                dataSize: mainjsContent.length,
+                fileSize: mainjsContent.length,
+                data: mainjsContent,
+                crc32: haxe.crypto.Crc32.make(mainjsContent),
                 compressed: false
             };
             entries.add(entry);
-            FileSystem.deleteFile(mainLuaPath);
+            FileSystem.deleteFile(mainjsPath);
 
             if (this.sprojJson.sourcemap != false) {
-                var sourceMapName = this.sprojJson.luabin + ".map";
+                var sourceMapName = this.sprojJson.mainscript + ".map";
                 var sourceMapPath = this.projDirPath + "/" + sourceMapName;
                 if (FileSystem.exists(sourceMapPath)) {
                     //Sys.println("Adding source map file: " + sourceMapName);
@@ -214,7 +214,7 @@ class Gamepak {
                             newAssetPath += ".dat";
                             var assetStr = assetContent.toString();
                             var assetData = Json.parse(assetStr);
-#if lua
+#if js
 #else
                             assetContent = MsgPack.encode(assetData);
 #end
@@ -242,8 +242,8 @@ class Gamepak {
                 name: this.sprojJson.name,
                 version: this.sprojJson.version,
                 rootUrl: this.sprojJson.rootUrl,
-                luabin: this.sprojJson.luabin,
-                runtime: "lua",
+                mainscript: this.sprojJson.mainscript,
+                runtime: "js",
                 type: this.sprojJson.type
             };
 
@@ -300,10 +300,10 @@ class Gamepak {
         }
     }
 
-#if lua
+#if js
     public var jsonToMsgpackConverter: (String) -> Bytes;
 
-    public function buildCoroutine(snbprojPath: String): lua.Coroutine<()->Void> {
+    public function buildCoroutine(snbprojPath: String): js.Coroutine<()->Void> {
     return Coroutine.create(() -> {
 
         // ---------------------------------
@@ -411,35 +411,35 @@ class Gamepak {
         Coroutine.yield();
 
         // ---------------------------------
-        // Phase 5: Add main Lua file to zip
+        // Phase 5: Add main js file to zip
         // ---------------------------------
-        var mainLuaPath = this.projDirPath + "/" + this.sprojJson.luabin;
-        trace(mainLuaPath, FileSystem.exists(mainLuaPath));
-        if (!FileSystem.exists(mainLuaPath)) {
-            Sys.println("Main Lua file does not exist: " + mainLuaPath);
-            throw "Main Lua file does not exist: " + mainLuaPath;
+        var mainjsPath = this.projDirPath + "/" + this.sprojJson.mainscript;
+        trace(mainjsPath, FileSystem.exists(mainjsPath));
+        if (!FileSystem.exists(mainjsPath)) {
+            Sys.println("Main js file does not exist: " + mainjsPath);
+            throw "Main js file does not exist: " + mainjsPath;
             return;
         }
 
-        var mainLuaContent = File.getContent(mainLuaPath);
+        var mainjsContent = File.getContent(mainjsPath);
         entries.add({
-            fileName: this.sprojJson.luabin,
+            fileName: this.sprojJson.mainscript,
             fileTime: Date.now(),
-            dataSize: mainLuaContent.length,
-            fileSize: mainLuaContent.length,
-            data: Bytes.ofString(mainLuaContent),
+            dataSize: mainjsContent.length,
+            fileSize: mainjsContent.length,
+            data: Bytes.ofString(mainjsContent),
             crc32: null,
             compressed: false
         });
-        FileSystem.deleteFile(mainLuaPath);
-        Sys.println("Added File: main.lua");
+        FileSystem.deleteFile(mainjsPath);
+        Sys.println("Added File: main.js");
         Coroutine.yield();
 
         // --------------------------------
         // Phase 6: Add optional source map
         // --------------------------------
         if (this.sprojJson.sourcemap != false) {
-            var sourceMapName = this.sprojJson.luabin + ".map";
+            var sourceMapName = this.sprojJson.mainscript + ".map";
             var sourceMapPath = this.projDirPath + "/" + sourceMapName;
             if (FileSystem.exists(sourceMapPath)) {
                 var sourceMapContent = File.getContent(sourceMapPath);
@@ -526,8 +526,8 @@ class Gamepak {
             name: this.sprojJson.name,
             version: this.sprojJson.version,
             rootUrl: this.sprojJson.rootUrl,
-            luabin: this.sprojJson.luabin,
-            runtime: "lua",
+            mainscript: this.sprojJson.mainscript,
+            runtime: "js",
             type: this.sprojJson.type
         };
         var headerJson = haxe.Json.stringify(header);
@@ -636,7 +636,7 @@ class Gamepak {
         if (this.snbProjJson.sourcemap != false) {
             command += " -D source-map";
         }
-        command += " -lua " + this.projDirPath + "/" + this.snbProjJson.luabin += " -D lua-ver 5.4";
+        command += " -js " + this.projDirPath + "/" + this.snbProjJson.mainscript += " -D js-ver 5.4";
 
         var librariesStr = "";
         for (lib in this.snbProjJson.libraries) {
@@ -656,7 +656,7 @@ class Gamepak {
         if (this.sprojJson.sourcemap != false) {
             command += "\n-D source-map";
         }
-        command += "\n-lua \"" + this.sprojJson.luabin += "\"\n-D lua-vanilla";
+        command += "\n-js \"" + this.sprojJson.mainscript += "\"\n-D js-es=6";
 
         var librariesStr = "";
         for (lib in this.sprojJson.libraries) {
