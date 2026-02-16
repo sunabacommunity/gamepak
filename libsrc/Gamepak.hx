@@ -87,7 +87,7 @@ class Gamepak {
                     zipOutputPath += ".snb";
                 }
             }
-            else if (sprojJson.type == "library") {
+            else if (sprojJson.type == "library" || sprojJson.type == "plugin") {
                 if (zipOutputPath == "") {
                     zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".slib";
                 }
@@ -359,7 +359,7 @@ class Gamepak {
             } else if (!StringTools.endsWith(zipOutputPath, ".snb")) {
                 zipOutputPath += ".snb";
             }
-        } else if (sprojJson.type == "library") {
+        } else if (sprojJson.type == "library" || sprojJson.type == "plugin") {
             if (zipOutputPath == "") {
                 zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".slib";
             } else if (StringTools.endsWith(zipOutputPath, ".snb")) {
@@ -650,6 +650,9 @@ class Gamepak {
 
     private function generateHaxeBuildHxml(): String {
         var command = "--class-path \"" + this.sprojJson.scriptdir + "\"\n-main " + this.sprojJson.entrypoint + "\n--library libsunaba";
+        if (sprojJson.type == "plugin") {
+            command = "--class-path \"" + this.sprojJson.scriptdir + "\"\n-main " + this.sprojJson.pluginEntrypoint + "\n--library libsunaba\n--library sunaba-studio";
+        }
         if (this.sprojJson.apisymbols != false) {
             command += "\n--xml types.xml";
         }
