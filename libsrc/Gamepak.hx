@@ -17,7 +17,7 @@ class Gamepak {
     public var snbprojPath: String;
     public var projDirPath: String = "";
 
-    public var sprojJson: ProjectFile;
+    public var jsprojJson: ProjectFile;
 
     public var zipOutputPath: String = "";
 
@@ -57,24 +57,24 @@ class Gamepak {
         // Load the XML project file
         try {
             var json = sys.io.File.getContent(snbprojPath);
-            this.sprojJson = haxe.Json.parse(json);
+            this.jsprojJson = haxe.Json.parse(json);
             Sys.println("Successfully loaded project JSON.");
 
-            Sys.println("Project name: " + this.sprojJson.name);
-            Sys.println("Project version: " + this.sprojJson.version);
-            Sys.println("Project type: " + this.sprojJson.type);
-            Sys.println("Script directory: " + this.sprojJson.scriptdir);
-            Sys.println("Assets directory: " + this.sprojJson.assetsdir);
-            Sys.println("API symbols enabled: " + this.sprojJson.apisymbols);
-            Sys.println("Source map enabled: " + this.sprojJson.sourcemap);
-            Sys.println("Entrypoint: " + this.sprojJson.entrypoint);
-            Sys.println("js binary: " + this.sprojJson.mainscript);
-            Sys.println("Libraries: " + this.sprojJson.libraries.join(", "));
-            Sys.println("Compiler flags: " + this.sprojJson.compilerFlags.join(", "));
+            Sys.println("Project name: " + this.jsprojJson.name);
+            Sys.println("Project version: " + this.jsprojJson.version);
+            Sys.println("Project type: " + this.jsprojJson.type);
+            Sys.println("Script directory: " + this.jsprojJson.scriptdir);
+            Sys.println("Assets directory: " + this.jsprojJson.assetsdir);
+            Sys.println("API symbols enabled: " + this.jsprojJson.apisymbols);
+            Sys.println("Source map enabled: " + this.jsprojJson.sourcemap);
+            Sys.println("Entrypoint: " + this.jsprojJson.entrypoint);
+            Sys.println("js binary: " + this.jsprojJson.mainscript);
+            Sys.println("Libraries: " + this.jsprojJson.libraries.join(", "));
+            Sys.println("Compiler flags: " + this.jsprojJson.compilerFlags.join(", "));
 
-            if (sprojJson.type == "executable") {
+            if (jsprojJson.type == "executable") {
                 if (zipOutputPath == "") {
-                    zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".snb";
+                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".snb";
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".slib")) {
                     Sys.println("Warning: Output path ends with .slib, changing to .snb");
@@ -87,9 +87,9 @@ class Gamepak {
                     zipOutputPath += ".snb";
                 }
             }
-            else if (sprojJson.type == "library") {
+            else if (jsprojJson.type == "library") {
                 if (zipOutputPath == "") {
-                    zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".slib";
+                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".snb")) {
                     Sys.println("Warning: Output path ends with .snb, changing to .slib");
@@ -102,7 +102,7 @@ class Gamepak {
                     zipOutputPath += ".slib";
                 }
             } else {
-                Sys.println("Unknown project type: " + this.sprojJson.type);
+                Sys.println("Unknown project type: " + this.jsprojJson.type);
                 Sys.exit(1);
                 return;
             }
@@ -122,7 +122,7 @@ class Gamepak {
 
             Sys.println("Haxe build command executed successfully.");
 
-            var mainjsPath = this.projDirPath + "/" + this.sprojJson.mainscript;
+            var mainjsPath = this.projDirPath + "/" + this.jsprojJson.mainscript;
             if (!FileSystem.exists(mainjsPath)) {
                 Sys.println("Main js file does not exist: " + mainjsPath);
                 Sys.exit(1);
@@ -143,7 +143,7 @@ class Gamepak {
             //Sys.println("Adding main js file to zip: " + this.snbProjJson.mainscript);
             // Add main js file to the zip
             var entry:haxe.zip.Entry = {
-                fileName: this.sprojJson.mainscript,
+                fileName: this.jsprojJson.mainscript,
                 fileTime: Date.now(),
                 dataSize: mainjsContent.length,
                 fileSize: mainjsContent.length,
@@ -154,8 +154,8 @@ class Gamepak {
             entries.add(entry);
             FileSystem.deleteFile(mainjsPath);
 
-            if (this.sprojJson.sourcemap != false) {
-                var sourceMapName = this.sprojJson.mainscript + ".map";
+            if (this.jsprojJson.sourcemap != false) {
+                var sourceMapName = this.jsprojJson.mainscript + ".map";
                 var sourceMapPath = this.projDirPath + "/" + sourceMapName;
                 if (FileSystem.exists(sourceMapPath)) {
                     //Sys.println("Adding source map file: " + sourceMapName);
@@ -175,7 +175,7 @@ class Gamepak {
                     Sys.println("Source map file does not exist, skipping: " + sourceMapName);
                 }
             }
-            if (this.sprojJson.apisymbols != false) {
+            if (this.jsprojJson.apisymbols != false) {
                 var typesXmlPath = this.projDirPath + "/types.xml";
                 if (FileSystem.exists(typesXmlPath)) {
                     //Sys.println("Adding types XML file: types.xml");
@@ -197,7 +197,7 @@ class Gamepak {
             }
 
 
-            var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
+            var assetPath = this.projDirPath + "/" + this.jsprojJson.assetsdir;
             if (FileSystem.exists(assetPath)) {
                 var assets = this.getAllFiles(assetPath);
 
@@ -239,12 +239,12 @@ class Gamepak {
             Sys.println("creating header for zip file");
 
             var header : HeaderFile = {
-                name: this.sprojJson.name,
-                version: this.sprojJson.version,
-                rootUrl: this.sprojJson.rootUrl,
-                mainscript: this.sprojJson.mainscript,
+                name: this.jsprojJson.name,
+                version: this.jsprojJson.version,
+                rootUrl: this.jsprojJson.rootUrl,
+                mainscript: this.jsprojJson.mainscript,
                 runtime: "js",
-                type: this.sprojJson.type
+                type: this.jsprojJson.type
             };
 
             var headerJson = haxe.Json.stringify(header);
@@ -283,10 +283,10 @@ class Gamepak {
                 out.write(outputBytes);
                 out.close();
 
-                if (sprojJson.type == "executable") {
+                if (jsprojJson.type == "executable") {
                     Sys.println("snb file created successfully at: " + zipOutputPath);
                 }
-                else if (sprojJson.type == "library") {
+                else if (jsprojJson.type == "library") {
                     Sys.println("slib file created successfully at: " + zipOutputPath);
                 }*/
             }
@@ -335,11 +335,11 @@ class Gamepak {
         // ---------------------------
         try {
             var json = sys.io.File.getContent(snbprojPath);
-            this.sprojJson = haxe.Json.parse(json);
+            this.jsprojJson = haxe.Json.parse(json);
             Sys.println("Successfully loaded project JSON.");
-            Sys.println("Project name: " + this.sprojJson.name);
-            Sys.println("Project version: " + this.sprojJson.version);
-            Sys.println("Project type: " + this.sprojJson.type);
+            Sys.println("Project name: " + this.jsprojJson.name);
+            Sys.println("Project version: " + this.jsprojJson.version);
+            Sys.println("Project type: " + this.jsprojJson.type);
         } catch (e: Dynamic) {
             Sys.println("Error loading project JSON: " + e);
             throw "Error loading project JSON: " + e;
@@ -350,18 +350,18 @@ class Gamepak {
         // -------------------------------
         // Phase 3: Determine output path
         // -------------------------------
-        if (sprojJson.type == "executable") {
+        if (jsprojJson.type == "executable") {
             if (zipOutputPath == "") {
-                zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".snb";
+                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".snb";
             } else if (StringTools.endsWith(zipOutputPath, ".slib")) {
                 Sys.println("Warning: Output path ends with .slib, changing to .snb");
                 zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".snb");
             } else if (!StringTools.endsWith(zipOutputPath, ".snb")) {
                 zipOutputPath += ".snb";
             }
-        } else if (sprojJson.type == "library") {
+        } else if (jsprojJson.type == "library") {
             if (zipOutputPath == "") {
-                zipOutputPath = this.projDirPath + "/bin/" + this.sprojJson.name + ".slib";
+                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
             } else if (StringTools.endsWith(zipOutputPath, ".snb")) {
                 Sys.println("Warning: Output path ends with .snb, changing to .slib");
                 zipOutputPath = StringTools.replace(zipOutputPath, ".snb", ".slib");
@@ -369,8 +369,8 @@ class Gamepak {
                 zipOutputPath += ".slib";
             }
         } else {
-            Sys.println("Unknown project type: " + this.sprojJson.type);
-            throw "Unknown project type: " + this.sprojJson.type;
+            Sys.println("Unknown project type: " + this.jsprojJson.type);
+            throw "Unknown project type: " + this.jsprojJson.type;
             return;
         }
         Coroutine.yield();
@@ -413,7 +413,7 @@ class Gamepak {
         // ---------------------------------
         // Phase 5: Add main js file to zip
         // ---------------------------------
-        var mainjsPath = this.projDirPath + "/" + this.sprojJson.mainscript;
+        var mainjsPath = this.projDirPath + "/" + this.jsprojJson.mainscript;
         trace(mainjsPath, FileSystem.exists(mainjsPath));
         if (!FileSystem.exists(mainjsPath)) {
             Sys.println("Main js file does not exist: " + mainjsPath);
@@ -423,7 +423,7 @@ class Gamepak {
 
         var mainjsContent = File.getContent(mainjsPath);
         entries.add({
-            fileName: this.sprojJson.mainscript,
+            fileName: this.jsprojJson.mainscript,
             fileTime: Date.now(),
             dataSize: mainjsContent.length,
             fileSize: mainjsContent.length,
@@ -438,8 +438,8 @@ class Gamepak {
         // --------------------------------
         // Phase 6: Add optional source map
         // --------------------------------
-        if (this.sprojJson.sourcemap != false) {
-            var sourceMapName = this.sprojJson.mainscript + ".map";
+        if (this.jsprojJson.sourcemap != false) {
+            var sourceMapName = this.jsprojJson.mainscript + ".map";
             var sourceMapPath = this.projDirPath + "/" + sourceMapName;
             if (FileSystem.exists(sourceMapPath)) {
                 var sourceMapContent = File.getContent(sourceMapPath);
@@ -461,7 +461,7 @@ class Gamepak {
         // --------------------------------
         // Phase 7: Add API symbols if any
         // --------------------------------
-        if (this.sprojJson.apisymbols != false) {
+        if (this.jsprojJson.apisymbols != false) {
             var typesXmlPath = this.projDirPath + "/types.xml";
             if (FileSystem.exists(typesXmlPath)) {
                 var typesXmlContent = File.getContent(typesXmlPath);
@@ -483,7 +483,7 @@ class Gamepak {
         // ----------------------------
         // Phase 8: Add assets to zip
         // ----------------------------
-        var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
+        var assetPath = this.projDirPath + "/" + this.jsprojJson.assetsdir;
         if (FileSystem.exists(assetPath)) {
             var assets = this.getAllFilesCR(assetPath);
             Coroutine.yield();
@@ -523,12 +523,12 @@ class Gamepak {
         // Phase 9: Add header.json entry
         // ------------------------------
         var header : HeaderFile = {
-            name: this.sprojJson.name,
-            version: this.sprojJson.version,
-            rootUrl: this.sprojJson.rootUrl,
-            mainscript: this.sprojJson.mainscript,
+            name: this.jsprojJson.name,
+            version: this.jsprojJson.version,
+            rootUrl: this.jsprojJson.rootUrl,
+            mainscript: this.jsprojJson.mainscript,
             runtime: "js",
-            type: this.sprojJson.type
+            type: this.jsprojJson.type
         };
         var headerJson = haxe.Json.stringify(header);
         var headerContent = haxe.io.Bytes.ofString(headerJson);
@@ -649,20 +649,20 @@ class Gamepak {
     var useExternApi = false;
 
     private function generateHaxeBuildHxml(): String {
-        var command = "--class-path \"" + this.sprojJson.scriptdir + "\"\n-main " + this.sprojJson.entrypoint + "\n--library sunaba";
-        if (this.sprojJson.apisymbols != false) {
+        var command = "--class-path \"" + this.jsprojJson.scriptdir + "\"\n-main " + this.jsprojJson.entrypoint + "\n--library sunaba";
+        if (this.jsprojJson.apisymbols != false) {
             command += "\n--xml types.xml";
         }
-        if (this.sprojJson.sourcemap != false) {
+        if (this.jsprojJson.sourcemap != false) {
             command += "\n-D source-map";
         }
-        command += "\n-js \"" + this.sprojJson.mainscript += "\"\n-D js-es=6";
+        command += "\n-js \"" + this.jsprojJson.mainscript += "\"\n-D js-es=6";
 
         var librariesStr = "";
-        for (lib in this.sprojJson.libraries) {
+        for (lib in this.jsprojJson.libraries) {
             librariesStr += "\n--library " + lib;
         }
-        command += "\n" + this.sprojJson.compilerFlags.join("\n");
+        command += "\n" + this.jsprojJson.compilerFlags.join("\n");
         return command;
     }
 
