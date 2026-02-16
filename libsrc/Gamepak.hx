@@ -1,9 +1,6 @@
 package;
 import haxe.Json;
 import haxe.io.BytesBuffer;
-#if js
-import js.Coroutine;
-#end
 import haxe.io.Bytes;
 import haxe.ds.StringMap;
 import sys.io.File;
@@ -14,7 +11,7 @@ import org.msgpack.MsgPack;
 #end
 class Gamepak {
 
-    public var sbxprojPath: String;
+    public var snbprojPath: String;
     public var projDirPath: String = "";
 
     public var jsprojJson: ProjectFile;
@@ -35,16 +32,16 @@ class Gamepak {
 
     public var chmodder: (String)->Void;
 
-    public function build(sbxprojPath: String): Void {
-        Sys.println("Building project at: " + sbxprojPath);
+    public function build(snbprojPath: String): Void {
+        Sys.println("Building project at: " + snbprojPath);
 
-        sbxprojPath = FileSystem.absolutePath(sbxprojPath);
+        snbprojPath = FileSystem.absolutePath(snbprojPath);
 
         // Here you would implement the logic to build the project
         // For now, we just print a message
-        this.sbxprojPath = sbxprojPath;
-        var sbxProjPathArray = sbxprojPath.split("/");
-        this.projDirPath = sbxProjPathArray.slice(0, sbxProjPathArray.length - 1).join("/");
+        this.snbprojPath = snbprojPath;
+        var snbProjPathArray = snbprojPath.split("/");
+        this.projDirPath = snbProjPathArray.slice(0, snbProjPathArray.length - 1).join("/");
         Sys.println("Project directory path: " + this.projDirPath);
         var binPath = this.projDirPath + "/bin";
         if (!FileSystem.exists(binPath)) {
@@ -56,7 +53,7 @@ class Gamepak {
 
         // Load the XML project file
         try {
-            var json = sys.io.File.getContent(sbxprojPath);
+            var json = sys.io.File.getContent(snbprojPath);
             this.jsprojJson = haxe.Json.parse(json);
             Sys.println("Successfully loaded project JSON.");
 
@@ -74,26 +71,26 @@ class Gamepak {
 
             if (jsprojJson.type == "executable") {
                 if (zipOutputPath == "") {
-                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".sbx";
+                    zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".snb";
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".slib")) {
-                    Sys.println("Warning: Output path ends with .slib, changing to .sbx");
-                    zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".sbx");
+                    Sys.println("Warning: Output path ends with .slib, changing to .snb");
+                    zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".snb");
                 }
-                else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
+                else if (StringTools.endsWith(zipOutputPath, ".snb")) {
                     // Do nothing, already correct
                 }
                 else {
-                    zipOutputPath += ".sbx";
+                    zipOutputPath += ".snb";
                 }
             }
             else if (jsprojJson.type == "library") {
                 if (zipOutputPath == "") {
                     zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
                 }
-                else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
-                    Sys.println("Warning: Output path ends with .sbx, changing to .slib");
-                    zipOutputPath = StringTools.replace(zipOutputPath, ".sbx", ".slib");
+                else if (StringTools.endsWith(zipOutputPath, ".snb")) {
+                    Sys.println("Warning: Output path ends with .snb, changing to .slib");
+                    zipOutputPath = StringTools.replace(zipOutputPath, ".snb", ".slib");
                 }
                 else if (StringTools.endsWith(zipOutputPath, ".slib")) {
                     // Do nothing, already correct
@@ -140,7 +137,7 @@ class Gamepak {
             // Collect all zip entries in a list
             var entries = new haxe.ds.List<haxe.zip.Entry>();
 
-            //Sys.println("Adding main js file to zip: " + this.sbxProjJson.mainscript);
+            //Sys.println("Adding main js file to zip: " + this.snbProjJson.mainscript);
             // Add main js file to the zip
             var entry:haxe.zip.Entry = {
                 fileName: this.jsprojJson.mainscript,
@@ -284,7 +281,7 @@ class Gamepak {
                 out.close();
 
                 if (jsprojJson.type == "executable") {
-                    Sys.println("sbx file created successfully at: " + zipOutputPath);
+                    Sys.println("snb file created successfully at: " + zipOutputPath);
                 }
                 else if (jsprojJson.type == "library") {
                     Sys.println("slib file created successfully at: " + zipOutputPath);
@@ -299,319 +296,6 @@ class Gamepak {
             return;
         }
     }
-
-#if js
-    public var jsonToMsgpackConverter: (String) -> Bytes;
-
-    public function buildCoroutine(sbxprojPath: String): js.Coroutine<()->Void> {
-    return Coroutine.create(() -> {
-
-        // ---------------------------------
-        // Phase 1: Initial setup and paths
-        // ---------------------------------
-        Sys.println("Building project at: " + sbxprojPath);
-
-        if (StringTools.contains(sbxprojPath, "\\")) {
-            sbxprojPath = StringTools.replace(sbxprojPath, "\\", "/");
-        }
-        this.sbxprojPath = sbxprojPath;
-        var sbxProjPathArray = sbxprojPath.split("/");
-        this.projDirPath = sbxProjPathArray.slice(0, sbxProjPathArray.length - 1).join("/");
-        Sys.println("Project directory path: " + this.projDirPath);
-
-        var binPath = this.projDirPath + "/bin";
-        if (!FileSystem.exists(binPath)) {
-            FileSystem.createDirectory(binPath);
-            Sys.println("Created bin directory: " + binPath);
-        } else {
-            Sys.println("Bin directory already exists: " + binPath);
-        }
-        Coroutine.yield(); // ✅ safe yield
-
-        var entries = new haxe.ds.List<haxe.zip.Entry>();
-
-        // ---------------------------
-        // Phase 2: Load project JSON
-        // ---------------------------
-        try {
-            var json = sys.io.File.getContent(sbxprojPath);
-            this.jsprojJson = haxe.Json.parse(json);
-            Sys.println("Successfully loaded project JSON.");
-            Sys.println("Project name: " + this.jsprojJson.name);
-            Sys.println("Project version: " + this.jsprojJson.version);
-            Sys.println("Project type: " + this.jsprojJson.type);
-        } catch (e: Dynamic) {
-            Sys.println("Error loading project JSON: " + e);
-            throw "Error loading project JSON: " + e;
-            return;
-        }
-        Coroutine.yield();
-
-        // -------------------------------
-        // Phase 3: Determine output path
-        // -------------------------------
-        if (jsprojJson.type == "executable") {
-            if (zipOutputPath == "") {
-                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".sbx";
-            } else if (StringTools.endsWith(zipOutputPath, ".slib")) {
-                Sys.println("Warning: Output path ends with .slib, changing to .sbx");
-                zipOutputPath = StringTools.replace(zipOutputPath, ".slib", ".sbx");
-            } else if (!StringTools.endsWith(zipOutputPath, ".sbx")) {
-                zipOutputPath += ".sbx";
-            }
-        } else if (jsprojJson.type == "library") {
-            if (zipOutputPath == "") {
-                zipOutputPath = this.projDirPath + "/bin/" + this.jsprojJson.name + ".slib";
-            } else if (StringTools.endsWith(zipOutputPath, ".sbx")) {
-                Sys.println("Warning: Output path ends with .sbx, changing to .slib");
-                zipOutputPath = StringTools.replace(zipOutputPath, ".sbx", ".slib");
-            } else if (!StringTools.endsWith(zipOutputPath, ".slib")) {
-                zipOutputPath += ".slib";
-            }
-        } else {
-            Sys.println("Unknown project type: " + this.jsprojJson.type);
-            throw "Unknown project type: " + this.jsprojJson.type;
-            return;
-        }
-        Coroutine.yield();
-
-        // -----------------------------
-        // Phase 4: Haxe build command
-        // -----------------------------
-        var command = this.generateHaxeBuildCommand();
-        Sys.println("Generated Haxe build command: " + command);
-
-        var hxres = -1;
-        if (Sys.systemName() == "Windows") {
-            hxres = Sys.command("cd " + this.projDirPath + " && " + command);
-        }
-        else {
-            var shellscript = "#!/bin/sh\n";
-            shellscript += "cd \"" + this.projDirPath + "\"\n";
-            shellscript += command;
-
-            var shpath = this.projDirPath + "/.studio/build-game-code.sh";
-            if (StringTools.endsWith(this.projDirPath, "/")) {
-                shpath = this.projDirPath + ".studio/build-game-code.sh";
-            }
-
-            File.saveContent(shpath, shellscript);
-
-            chmodder(shpath);
-
-            hxres = Sys.command(shpath);
-        }
-
-        if (hxres != 0) {
-            Sys.println("Haxe build command failed with exit code: " + hxres);
-            throw "Haxe build command failed with exit code: " + hxres;
-            return;
-        }
-        Sys.println("Haxe build command executed successfully.");
-        Coroutine.yield();
-
-        // ---------------------------------
-        // Phase 5: Add main js file to zip
-        // ---------------------------------
-        var mainjsPath = this.projDirPath + "/" + this.jsprojJson.mainscript;
-        trace(mainjsPath, FileSystem.exists(mainjsPath));
-        if (!FileSystem.exists(mainjsPath)) {
-            Sys.println("Main js file does not exist: " + mainjsPath);
-            throw "Main js file does not exist: " + mainjsPath;
-            return;
-        }
-
-        var mainjsContent = File.getContent(mainjsPath);
-        entries.add({
-            fileName: this.jsprojJson.mainscript,
-            fileTime: Date.now(),
-            dataSize: mainjsContent.length,
-            fileSize: mainjsContent.length,
-            data: Bytes.ofString(mainjsContent),
-            crc32: null,
-            compressed: false
-        });
-        FileSystem.deleteFile(mainjsPath);
-        Sys.println("Added File: main.js");
-        Coroutine.yield();
-
-        // --------------------------------
-        // Phase 6: Add optional source map
-        // --------------------------------
-        if (this.jsprojJson.sourcemap != false) {
-            var sourceMapName = this.jsprojJson.mainscript + ".map";
-            var sourceMapPath = this.projDirPath + "/" + sourceMapName;
-            if (FileSystem.exists(sourceMapPath)) {
-                var sourceMapContent = File.getContent(sourceMapPath);
-                entries.add({
-                    fileName: sourceMapName,
-                    fileSize: sourceMapContent.length,
-                    dataSize: sourceMapContent.length,
-                    fileTime: Date.now(),
-                    data: Bytes.ofString(sourceMapContent),
-                    crc32: null,
-                    compressed: false
-                });
-                FileSystem.deleteFile(sourceMapPath);
-            }
-            Sys.println("Added File: " + sourceMapName);
-        }
-        Coroutine.yield();
-
-        // --------------------------------
-        // Phase 7: Add API symbols if any
-        // --------------------------------
-        if (this.jsprojJson.apisymbols != false) {
-            var typesXmlPath = this.projDirPath + "/types.xml";
-            if (FileSystem.exists(typesXmlPath)) {
-                var typesXmlContent = File.getContent(typesXmlPath);
-                entries.add({
-                    fileName: "types.xml",
-                    fileSize: typesXmlContent.length,
-                    dataSize: typesXmlContent.length,
-                    fileTime: Date.now(),
-                    data: Bytes.ofString(typesXmlContent),
-                    crc32: null,
-                    compressed: false
-                });
-                FileSystem.deleteFile(typesXmlPath);
-            }
-            Sys.println("Added File: types.xml");
-        }
-        Coroutine.yield();
-
-        // ----------------------------
-        // Phase 8: Add assets to zip
-        // ----------------------------
-        var assetPath = this.projDirPath + "/" + this.jsprojJson.assetsdir;
-        if (FileSystem.exists(assetPath)) {
-            var assets = this.getAllFilesCR(assetPath);
-            Coroutine.yield();
-            for (assetKey in assets.keys()) {
-                trace(assetKey);
-                var assetContent = assets.get(assetKey);
-                Coroutine.yield();
-                var newAssetPath = assetKey;
-                Coroutine.yield();
-                for (resourceFormat in resourceFormats) {
-                    if (StringTools.endsWith(assetKey, resourceFormat)) {
-                        newAssetPath += ".dat";
-                        Coroutine.yield();
-                        var assetStr = assetContent.toString();
-                        Coroutine.yield();
-                        assetContent = jsonToMsgpackConverter(assetStr);
-                    }
-                    Coroutine.yield();
-                }
-                Coroutine.yield();
-                entries.add({
-                    fileName: StringTools.replace(newAssetPath, "assets/", ""),
-                    fileSize: assetContent.length,
-                    dataSize: assetContent.length,
-                    fileTime: Date.now(),
-                    data: assetContent,
-                    crc32: null,
-                    compressed: false
-                });
-                Sys.println("Added File: " + StringTools.replace(assetKey, "assets/", ""));
-                Coroutine.yield();
-            }
-        }
-        Coroutine.yield();
-
-        // ------------------------------
-        // Phase 9: Add header.json entry
-        // ------------------------------
-        var header : HeaderFile = {
-            name: this.jsprojJson.name,
-            version: this.jsprojJson.version,
-            rootUrl: this.jsprojJson.rootUrl,
-            mainscript: this.jsprojJson.mainscript,
-            runtime: "js",
-            type: this.jsprojJson.type
-        };
-        var headerJson = haxe.Json.stringify(header);
-        var headerContent = haxe.io.Bytes.ofString(headerJson);
-        entries.add({
-            fileName: "header.json",
-            fileSize: headerContent.length,
-            dataSize: headerContent.length,
-            fileTime: Date.now(),
-            data: headerContent,
-            crc32: null,
-            compressed: false
-        });
-        Sys.println("Added File: header.json");
-        Coroutine.yield();
-
-        // ---------------------------------
-        // Phase 10: Write zip file to disk
-        // ---------------------------------
-        var out = sys.io.File.write(zipOutputPath, true);
-        var writer = new haxe.zip.Writer(out);
-        writer.write(entries);
-        out.close();
-        Sys.println("Zip file created successfully at: " + zipOutputPath);
-        Coroutine.yield();
-
-        // ---------------------------------
-        // Phase 11: Mark as executable
-        // ---------------------------------
-        if (this.markExecutable) {
-            /*var shebang = "#!/usr/bin/env sunaba\n";
-            var zipBytes = File.getBytes(zipOutputPath);
-            var shebangBytes = Bytes.ofString(shebang);
-            var outputBytes = Bytes.alloc(shebangBytes.length + zipBytes.length);
-            outputBytes.blit(0, shebangBytes, 0, shebangBytes.length);
-            outputBytes.blit(shebangBytes.length, zipBytes, 0, zipBytes.length);
-
-            var outExec = File.write(zipOutputPath, true);
-            outExec.write(outputBytes);
-            outExec.close();
-            Sys.println("Marked as executable: " + zipOutputPath);*/
-        }
-        Coroutine.yield();
-
-        Sys.println("Build complete: " + zipOutputPath);
-    });
-}
-
-    private function getAllFilesCR(dir:String): StringMap<Bytes> {
-        if (!FileSystem.exists(dir)) {
-            throw "Directory does not exist: " + dir;
-        }
-
-        var vdir = StringTools.replace(dir, this.projDirPath, "");
-
-        var assets = new StringMap<Bytes>();
-
-        for (f in FileSystem.readDirectory(dir)) {
-            var filePath = dir + "/" + f;
-            if (FileSystem.isDirectory(filePath)) {
-                // Recursively get files from subdirectory
-                var subAssets = getAllFilesCR(filePath);
-                for (key in subAssets.keys()) {
-                    assets.set(key, subAssets.get(key));
-                    Coroutine.yield();
-                }
-                Coroutine.yield();
-            } else {
-                // Read file content
-                var content = File.getBytes(filePath);
-                var vfilePath = StringTools.replace(filePath, this.projDirPath, "");
-                if (StringTools.startsWith(vfilePath, "/")) {
-                    vfilePath = vfilePath.substr(1);
-                }
-                //Sys.println("Adding file to assets: " + vfilePath);
-                assets.set(vfilePath, content);
-                Coroutine.yield();
-            }
-        }
-
-        return assets;
-    }
-
-#end
 
     private function generateHaxeBuildCommand(): String {
 
@@ -629,20 +313,20 @@ class Gamepak {
         var command = "" + haxePath + " \"" + hxmlPath + "\"";
 
         return command;
-        /*var command = this.haxePath + " --class-path " + this.projDirPath + "/" + this.sbxProjJson.scriptdir + " -main " + this.sbxProjJson.entrypoint + " --library sunaba";
-        if (this.sbxProjJson.apisymbols != false) {
+        /*var command = this.haxePath + " --class-path " + this.projDirPath + "/" + this.snbProjJson.scriptdir + " -main " + this.snbProjJson.entrypoint + " --library sunaba";
+        if (this.snbProjJson.apisymbols != false) {
             command += " --xml " + this.projDirPath + "/types.xml";
         }
-        if (this.sbxProjJson.sourcemap != false) {
+        if (this.snbProjJson.sourcemap != false) {
             command += " -D source-map";
         }
-        command += " -js " + this.projDirPath + "/" + this.sbxProjJson.mainscript += " -D js-ver 5.4";
+        command += " -js " + this.projDirPath + "/" + this.snbProjJson.mainscript += " -D js-ver 5.4";
 
         var librariesStr = "";
-        for (lib in this.sbxProjJson.libraries) {
+        for (lib in this.snbProjJson.libraries) {
             librariesStr += " --library " + lib;
         }
-        command += " " + this.sbxProjJson.compilerFlags.join(" ");
+        command += " " + this.snbProjJson.compilerFlags.join(" ");
         return command;*/
     }
 

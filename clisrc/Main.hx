@@ -21,21 +21,21 @@ class Main {
             gamepak.zipOutputPath = FileSystem.absolutePath(arg2);
         }
         
-        var sbxprojpath = "";
+        var snbprojpath = "";
         for (arg in args) {
             if (StringTools.endsWith(arg, ".jsproj")) {
-                sbxprojpath = arg;
+                snbprojpath = arg;
                 break;
             }
         }
 
-        if (sbxprojpath == "") {
+        if (snbprojpath == "") {
             Sys.println("Usage: gamepak <project.jsproj>");
             return;
         }
 
-        if (StringTools.contains(sbxprojpath, "./")) {
-            sbxprojpath = StringTools.replace(sbxprojpath, "./", currentDirectory);
+        if (StringTools.contains(snbprojpath, "./")) {
+            snbprojpath = StringTools.replace(snbprojpath, "./", currentDirectory);
         }
 
         for (arg in args) {
@@ -47,6 +47,6 @@ class Main {
             }
         }
 
-        gamepak.build(sbxprojpath);
+        gamepak.build(snbprojpath);
     }
 }
