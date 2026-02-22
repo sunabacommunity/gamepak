@@ -28,7 +28,9 @@ class Gamepak {
     public var resourceFormats = [
         ".vscn",
         ".vpfb",
-        ".vres"
+        ".vres",
+        ".smdl",
+        ".ftd",
     ];
 
     public function new() {}
