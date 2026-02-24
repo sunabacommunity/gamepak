@@ -305,12 +305,20 @@ class Gamepak {
 #if lua
     public var jsonToMsgpackConverter: (String) -> Bytes;
 
+    public var cnt: Int = 0;
+
+    public function yield() {
+        cnt++;
+        Coroutine.yield();
+    }
+
     public function buildCoroutine(snbprojPath: String): lua.Coroutine<()->Void> {
     return Coroutine.create(() -> {
 
         // ---------------------------------
         // Phase 1: Initial setup and paths
         // ---------------------------------
+        cnt = 0;
         Sys.println("Building project at: " + snbprojPath);
 
         if (StringTools.contains(snbprojPath, "\\")) {
@@ -328,7 +336,7 @@ class Gamepak {
         } else {
             Sys.println("Bin directory already exists: " + binPath);
         }
-        Coroutine.yield(); // ✅ safe yield
+        yield(); // ✅ safe yield
 
         var entries = new haxe.ds.List<haxe.zip.Entry>();
 
@@ -347,7 +355,7 @@ class Gamepak {
             throw "Error loading project JSON: " + e;
             return;
         }
-        Coroutine.yield();
+        yield();
 
         // -------------------------------
         // Phase 3: Determine output path
@@ -375,7 +383,7 @@ class Gamepak {
             throw "Unknown project type: " + this.sprojJson.type;
             return;
         }
-        Coroutine.yield();
+        yield();
 
         // -----------------------------
         // Phase 4: Haxe build command
@@ -410,7 +418,7 @@ class Gamepak {
             return;
         }
         Sys.println("Haxe build command executed successfully.");
-        Coroutine.yield();
+        yield();
 
         // ---------------------------------
         // Phase 5: Add main Lua file to zip
@@ -435,7 +443,7 @@ class Gamepak {
         });
         FileSystem.deleteFile(mainLuaPath);
         Sys.println("Added File: main.lua");
-        Coroutine.yield();
+        yield();
 
         // --------------------------------
         // Phase 6: Add optional source map
@@ -458,7 +466,7 @@ class Gamepak {
             }
             Sys.println("Added File: " + sourceMapName);
         }
-        Coroutine.yield();
+        yield();
 
         // --------------------------------
         // Phase 7: Add API symbols if any
@@ -480,7 +488,7 @@ class Gamepak {
             }
             Sys.println("Added File: types.xml");
         }
-        Coroutine.yield();
+        yield();
 
         // ----------------------------
         // Phase 8: Add assets to zip
@@ -488,24 +496,24 @@ class Gamepak {
         var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
         if (FileSystem.exists(assetPath)) {
             var assets = this.getAllFilesCR(assetPath);
-            Coroutine.yield();
+            yield();
             for (assetKey in assets.keys()) {
                 trace(assetKey);
                 var assetContent = assets.get(assetKey);
-                Coroutine.yield();
+                yield();
                 var newAssetPath = assetKey;
-                Coroutine.yield();
+                yield();
                 for (resourceFormat in resourceFormats) {
                     if (StringTools.endsWith(assetKey, resourceFormat)) {
                         newAssetPath += ".dat";
-                        Coroutine.yield();
+                        yield();
                         var assetStr = assetContent.toString();
-                        Coroutine.yield();
+                        yield();
                         assetContent = jsonToMsgpackConverter(assetStr);
                     }
-                    Coroutine.yield();
+                    yield();
                 }
-                Coroutine.yield();
+                yield();
                 entries.add({
                     fileName: StringTools.replace(newAssetPath, "assets/", ""),
                     fileSize: assetContent.length,
@@ -516,10 +524,10 @@ class Gamepak {
                     compressed: false
                 });
                 Sys.println("Added File: " + StringTools.replace(assetKey, "assets/", ""));
-                Coroutine.yield();
+                yield();
             }
         }
-        Coroutine.yield();
+        yield();
 
         // ------------------------------
         // Phase 9: Add header.json entry
@@ -544,7 +552,7 @@ class Gamepak {
             compressed: false
         });
         Sys.println("Added File: header.json");
-        Coroutine.yield();
+        yield();
 
         // ---------------------------------
         // Phase 10: Write zip file to disk
@@ -554,7 +562,7 @@ class Gamepak {
         writer.write(entries);
         out.close();
         Sys.println("Zip file created successfully at: " + zipOutputPath);
-        Coroutine.yield();
+        yield();
 
         // ---------------------------------
         // Phase 11: Mark as executable
@@ -572,7 +580,7 @@ class Gamepak {
             outExec.close();
             Sys.println("Marked as executable: " + zipOutputPath);*/
         }
-        Coroutine.yield();
+        yield();
 
         Sys.println("Build complete: " + zipOutputPath);
     });
@@ -594,9 +602,9 @@ class Gamepak {
                 var subAssets = getAllFilesCR(filePath);
                 for (key in subAssets.keys()) {
                     assets.set(key, subAssets.get(key));
-                    Coroutine.yield();
+                    yield();
                 }
-                Coroutine.yield();
+                yield();
             } else {
                 // Read file content
                 var content = File.getBytes(filePath);
@@ -606,11 +614,126 @@ class Gamepak {
                 }
                 //Sys.println("Adding file to assets: " + vfilePath);
                 assets.set(vfilePath, content);
-                Coroutine.yield();
+                yield();
             }
         }
 
         return assets;
+    }
+
+    public function buildCoroutineCount(snbprojPath: String): Int {
+        // ---------------------------------
+        // Phase 1: Initial setup and paths
+        // ---------------------------------
+        var count = 1;
+
+        count++;
+
+        // -------------------------------
+        // Phase 3: Determine output path
+        // -------------------------------
+        count++;
+
+        // -----------------------------
+        // Phase 4: Haxe build command
+        // -----------------------------
+        count++;
+
+        // ---------------------------------
+        // Phase 5: Add main Lua file to zip
+        // ---------------------------------
+        count++;
+
+        // --------------------------------
+        // Phase 6: Add optional source map
+        // --------------------------------
+        count++;
+
+        // --------------------------------
+        // Phase 7: Add API symbols if any
+        // --------------------------------
+        count++;
+
+        // ----------------------------
+        // Phase 8: Add assets to zip
+        // ----------------------------
+        var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
+        if (FileSystem.exists(assetPath)) {
+            var assets = this.getAllFilesCR(assetPath);
+            count++;
+            for (assetKey in assets.keys()) {
+                trace(assetKey);
+                var assetContent = assets.get(assetKey);
+                count++;
+                var newAssetPath = assetKey;
+                count++;
+                for (resourceFormat in resourceFormats) {
+                    if (StringTools.endsWith(assetKey, resourceFormat)) {
+                        count++;
+                        var assetStr = assetContent.toString();
+                        count++;
+                    }
+                    count++;
+                }
+                count++;
+                count++;
+            }
+        }
+        count++;
+
+        // ------------------------------
+        // Phase 9: Add header.json entry
+        // ------------------------------
+        count++;
+
+        // ---------------------------------
+        // Phase 10: Write zip file to disk
+        // ---------------------------------
+        count++;
+
+        // ---------------------------------
+        // Phase 11: Mark as executable
+        // ---------------------------------
+        if (this.markExecutable) {
+            /*var shebang = "#!/usr/bin/env sunaba\n";
+            var zipBytes = File.getBytes(zipOutputPath);
+            var shebangBytes = Bytes.ofString(shebang);
+            var outputBytes = Bytes.alloc(shebangBytes.length + zipBytes.length);
+            outputBytes.blit(0, shebangBytes, 0, shebangBytes.length);
+            outputBytes.blit(shebangBytes.length, zipBytes, 0, zipBytes.length);
+
+            var outExec = File.write(zipOutputPath, true);
+            outExec.write(outputBytes);
+            outExec.close();
+            Sys.println("Marked as executable: " + zipOutputPath);*/
+        }
+        count++;
+
+        return count;
+}
+
+    private function getAllFilesCount(dir:String): Int{
+        var count = 0;
+        if (!FileSystem.exists(dir)) {
+            throw "Directory does not exist: " + dir;
+        }
+
+        var vdir = StringTools.replace(dir, this.projDirPath, "");
+
+        var assets = new StringMap<Bytes>();
+
+        for (f in FileSystem.readDirectory(dir)) {
+            var filePath = dir + "/" + f;
+            if (FileSystem.isDirectory(filePath)) {
+                // Recursively get files from subdirectory
+                var subAssets = getAllFilesCount(filePath);
+                count += subAssets;
+            } else {
+                count++;
+            }
+        }
+
+        return count;
     }
 
 #end
