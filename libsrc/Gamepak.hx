@@ -393,6 +393,7 @@ class Gamepak {
 
         var hxres = -1;
         if (Sys.systemName() == "Windows") {
+            Sys.setCwd(this.projDirPath);
             hxres = Sys.command("cd " + this.projDirPath + " && " + command);
         }
         else {
