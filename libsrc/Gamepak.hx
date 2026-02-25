@@ -551,7 +551,7 @@ class Gamepak {
             crc32: null,
             compressed: false
         });
-        Sys.println("Added File: header.json");startTrack();
+        Sys.println("Added File: header.json");
         yield();
 
         // ---------------------------------
