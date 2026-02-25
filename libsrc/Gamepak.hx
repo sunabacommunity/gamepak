@@ -551,7 +551,7 @@ class Gamepak {
             crc32: null,
             compressed: false
         });
-        Sys.println("Added File: header.json");
+        Sys.println("Added File: header.json");startTrack();
         yield();
 
         // ---------------------------------
@@ -659,7 +659,8 @@ class Gamepak {
         // ----------------------------
         var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
         if (FileSystem.exists(assetPath)) {
-            var assets = this.getAllFilesCR(assetPath);
+            var assets = this.getAllFiles(assetPath);
+            count += this.getAllFilesCount(assetPath);
             count++;
             for (assetKey in assets.keys()) {
                 trace(assetKey);
