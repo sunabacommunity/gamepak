@@ -312,7 +312,20 @@ class Gamepak {
         Coroutine.yield();
     }
 
+    public var addToZipFile: (String, Bytes)->Void = null;
+    public var createZip: (String)->Void = null;
+    public var buildZip: (String)->Void = null;
+
     public function buildCoroutine(snbprojPath: String): lua.Coroutine<()->Void> {
+        if (createZip == null) {
+            throw "1";
+        }
+        if (addToZipFile == null) {
+            throw "2";
+        }
+        if (buildZip == null) {
+            throw "3";
+        }
     return Coroutine.create(() -> {
 
         // ---------------------------------
@@ -337,8 +350,6 @@ class Gamepak {
             Sys.println("Bin directory already exists: " + binPath);
         }
         yield(); // ✅ safe yield
-
-        var entries = new haxe.ds.List<haxe.zip.Entry>();
 
         // ---------------------------
         // Phase 2: Load project JSON
@@ -384,6 +395,8 @@ class Gamepak {
             return;
         }
         yield();
+
+        createZip(zipOutputPath);
 
         // -----------------------------
         // Phase 4: Haxe build command
@@ -432,16 +445,8 @@ class Gamepak {
             return;
         }
 
-        var mainLuaContent = File.getContent(mainLuaPath);
-        entries.add({
-            fileName: this.sprojJson.luabin,
-            fileTime: Date.now(),
-            dataSize: mainLuaContent.length,
-            fileSize: mainLuaContent.length,
-            data: Bytes.ofString(mainLuaContent),
-            crc32: null,
-            compressed: false
-        });
+        var mainLuaContent = File.getBytes(mainLuaPath);
+        addToZipFile(this.sprojJson.luabin, mainLuaContent);
         FileSystem.deleteFile(mainLuaPath);
         Sys.println("Added File: main.lua");
         yield();
@@ -453,16 +458,8 @@ class Gamepak {
             var sourceMapName = this.sprojJson.luabin + ".map";
             var sourceMapPath = this.projDirPath + "/" + sourceMapName;
             if (FileSystem.exists(sourceMapPath)) {
-                var sourceMapContent = File.getContent(sourceMapPath);
-                entries.add({
-                    fileName: sourceMapName,
-                    fileSize: sourceMapContent.length,
-                    dataSize: sourceMapContent.length,
-                    fileTime: Date.now(),
-                    data: Bytes.ofString(sourceMapContent),
-                    crc32: null,
-                    compressed: false
-                });
+                var sourceMapContent = File.getBytes(sourceMapPath);
+                addToZipFile(sourceMapName, sourceMapContent);
                 FileSystem.deleteFile(sourceMapPath);
             }
             Sys.println("Added File: " + sourceMapName);
@@ -475,16 +472,8 @@ class Gamepak {
         if (this.sprojJson.apisymbols != false) {
             var typesXmlPath = this.projDirPath + "/types.xml";
             if (FileSystem.exists(typesXmlPath)) {
-                var typesXmlContent = File.getContent(typesXmlPath);
-                entries.add({
-                    fileName: "types.xml",
-                    fileSize: typesXmlContent.length,
-                    dataSize: typesXmlContent.length,
-                    fileTime: Date.now(),
-                    data: Bytes.ofString(typesXmlContent),
-                    crc32: null,
-                    compressed: false
-                });
+                var typesXmlContent = File.getBytes(typesXmlPath);
+                addToZipFile("types.xml", typesXmlContent);
                 FileSystem.deleteFile(typesXmlPath);
             }
             Sys.println("Added File: types.xml");
@@ -515,15 +504,7 @@ class Gamepak {
                     yield();
                 }
                 yield();
-                entries.add({
-                    fileName: StringTools.replace(newAssetPath, "assets/", ""),
-                    fileSize: assetContent.length,
-                    dataSize: assetContent.length,
-                    fileTime: Date.now(),
-                    data: assetContent,
-                    crc32: null,
-                    compressed: false
-                });
+                addToZipFile(StringTools.replace(newAssetPath, "assets/", ""), assetContent);
                 Sys.println("Added File: " + StringTools.replace(assetKey, "assets/", ""));
                 yield();
             }
@@ -543,25 +524,14 @@ class Gamepak {
         };
         var headerJson = haxe.Json.stringify(header);
         var headerContent = haxe.io.Bytes.ofString(headerJson);
-        entries.add({
-            fileName: "header.json",
-            fileSize: headerContent.length,
-            dataSize: headerContent.length,
-            fileTime: Date.now(),
-            data: headerContent,
-            crc32: null,
-            compressed: false
-        });
+        addToZipFile("header.json", headerContent);
         Sys.println("Added File: header.json");
         yield();
 
         // ---------------------------------
         // Phase 10: Write zip file to disk
         // ---------------------------------
-        var out = sys.io.File.write(zipOutputPath, true);
-        var writer = new haxe.zip.Writer(out);
-        writer.write(entries);
-        out.close();
+        buildZip(zipOutputPath);
         Sys.println("Zip file created successfully at: " + zipOutputPath);
         yield();
 
