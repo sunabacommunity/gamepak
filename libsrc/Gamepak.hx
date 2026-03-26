@@ -316,6 +316,8 @@ class Gamepak {
     public var createZip: (String)->Void = null;
     public var buildZip: (String)->Void = null;
 
+    public var skipAssets: Bool = false;
+
     public function buildCoroutine(snbprojPath: String): lua.Coroutine<()->Void> {
         if (createZip == null) {
             throw "1";
@@ -484,7 +486,7 @@ class Gamepak {
         // Phase 8: Add assets to zip
         // ----------------------------
         var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
-        if (FileSystem.exists(assetPath)) {
+        if (FileSystem.exists(assetPath) && skipAssets == false) {
             var assets = this.getAllFilesCR(assetPath);
             yield();
             for (assetKey in assets.keys()) {
@@ -629,7 +631,7 @@ class Gamepak {
         // Phase 8: Add assets to zip
         // ----------------------------
         var assetPath = this.projDirPath + "/" + this.sprojJson.assetsdir;
-        if (FileSystem.exists(assetPath)) {
+        if (FileSystem.exists(assetPath) && skipAssets == false) {
             var assets = this.getAllFiles(assetPath);
             count += this.getAllFilesCount(assetPath);
             count++;
